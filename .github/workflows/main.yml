@@ -26,7 +26,7 @@ jobs:
           if [ ! -f "config.toml" ] && [ ! -f "config.yaml" ] && [ ! -f "config.json" ]; then
             hugo new site . --force
             git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke
-            echo 'theme = "ananke"' >> config.toml
+            echo 'theme = ["ananke"]' >> config.toml
             mkdir -p content/posts
             cat > content/posts/my-first-post.md << EOL
           ---
@@ -70,7 +70,8 @@ jobs:
             sudo nginx -t && sudo systemctl reload nginx
             
             sudo mkdir -p /var/www/hugo-site
-            sudo chown -R $USER:$USER /var/www/hugo-site
+            sudo chown -R www-data:www-data /var/www/hugo-site
+            sudo chmod -R 755 /var/www/hugo-site
 
       - name: Deploy to UpCloud
         uses: appleboy/scp-action@master
@@ -83,7 +84,7 @@ jobs:
           target: "/var/www/hugo-site"
           strip_components: 1
 
-      - name: Finalize deployment
+      - name: Finalize deployment and set permissions
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -91,5 +92,13 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
+            sudo chown -R www-data:www-data /var/www/hugo-site
+            sudo chmod -R 755 /var/www/hugo-site
+            sudo find /var/www/hugo-site -type d -exec chmod 755 {} \;
+            sudo find /var/www/hugo-site -type f -exec chmod 644 {} \;
+            ls -la /var/www/hugo-site
+            cat /var/www/hugo-site/index.html
+            sudo nginx -t
+            sudo systemctl restart nginx
             echo "Hugo site deployed successfully"
             echo "You can now access your site at http://$(curl -s -4 ifconfig.me)"
