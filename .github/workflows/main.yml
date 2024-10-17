@@ -12,14 +12,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          submodules: true  # Fetch Hugo themes (true OR recursive)
-          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+          submodules: true
+          fetch-depth: 0
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
           hugo-version: 'latest'
           extended: true
+
+      - name: Initialize Hugo site if not exists
+        run: |
+          if [ ! -f "config.toml" ] && [ ! -f "config.yaml" ] && [ ! -f "config.json" ]; then
+            hugo new site . --force
+            git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke
+            echo 'theme = "ananke"' >> config.toml
+            hugo new posts/my-first-post.md
+            sed -i '1,/---/!b;//!d' content/posts/my-first-post.md
+            echo "This is my first Hugo post!" >> content/posts/my-first-post.md
+          fi
 
       - name: Build Hugo site
         run: hugo --minify
@@ -37,10 +48,9 @@ jobs:
             sudo systemctl start nginx
             sudo systemctl enable nginx
             
-            # Create a new Nginx server block
             echo "server {
                 listen 80;
-                server_name $(curl -s ifconfig.me);  # Uses the public IP
+                server_name $(curl -s ifconfig.me);
                 root /var/www/hugo-site;
                 index index.html;
                 location / {
