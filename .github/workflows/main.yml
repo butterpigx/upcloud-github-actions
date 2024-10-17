@@ -27,13 +27,15 @@ jobs:
             hugo new site . --force
             git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke
             echo 'theme = "ananke"' >> config.toml
-            echo '---
-title: "My First Post"
-date: 2023-01-01
-draft: false
----
+            cat > content/posts/my-first-post.md << EOL
+          ---
+          title: "My First Post"
+          date: 2023-01-01
+          draft: false
+          ---
 
-This is my first Hugo post!' > content/posts/my-first-post.md
+          This is my first Hugo post!
+          EOL
           fi
 
       - name: Build Hugo site
