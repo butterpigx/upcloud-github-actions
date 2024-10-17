@@ -37,10 +37,20 @@ jobs:
 
           This is my first Hugo post!
           EOL
+            cat > content/_index.md << EOL
+          ---
+          title: "Welcome to My Hugo Site"
+          ---
+
+          This is the homepage of my Hugo site.
+          EOL
           fi
 
       - name: Build Hugo site
-        run: hugo --minify
+        run: |
+          hugo --minify
+          ls -la public
+          cat public/index.html
 
       - name: Install Nginx on UpCloud
         uses: appleboy/ssh-action@master
