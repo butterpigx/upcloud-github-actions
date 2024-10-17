@@ -25,9 +25,17 @@ jobs:
         run: |
           if [ ! -f "config.toml" ] && [ ! -f "config.yaml" ] && [ ! -f "config.json" ]; then
             hugo new site . --force
-            git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke
-            echo 'theme = ["ananke"]' >> config.toml
+            git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
+            echo 'theme = "ananke"' >> config.toml
+            echo 'baseURL = "/"' >> config.toml
             mkdir -p content/posts
+            cat > content/_index.md << EOL
+          ---
+          title: "Welcome to My Hugo Site"
+          ---
+
+          This is the homepage of my Hugo site.
+          EOL
             cat > content/posts/my-first-post.md << EOL
           ---
           title: "My First Post"
@@ -37,20 +45,19 @@ jobs:
 
           This is my first Hugo post!
           EOL
-            cat > content/_index.md << EOL
-          ---
-          title: "Welcome to My Hugo Site"
-          ---
-
-          This is the homepage of my Hugo site.
-          EOL
           fi
 
       - name: Build Hugo site
         run: |
           hugo --minify
           ls -la public
-          cat public/index.html
+          if [ -f public/index.html ]; then
+            echo "Content of index.html:"
+            cat public/index.html
+          else
+            echo "index.html not found. Directory contents:"
+            find public
+          fi
 
       - name: Install Nginx on UpCloud
         uses: appleboy/ssh-action@master
@@ -106,8 +113,15 @@ jobs:
             sudo chmod -R 755 /var/www/hugo-site
             sudo find /var/www/hugo-site -type d -exec chmod 755 {} \;
             sudo find /var/www/hugo-site -type f -exec chmod 644 {} \;
+            echo "Directory contents:"
             ls -la /var/www/hugo-site
-            cat /var/www/hugo-site/index.html
+            if [ -f /var/www/hugo-site/index.html ]; then
+              echo "Content of index.html:"
+              cat /var/www/hugo-site/index.html
+            else
+              echo "index.html not found. Directory contents:"
+              find /var/www/hugo-site
+            fi
             sudo nginx -t
             sudo systemctl restart nginx
             echo "Hugo site deployed successfully"
