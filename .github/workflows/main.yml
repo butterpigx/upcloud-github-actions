@@ -27,6 +27,7 @@ jobs:
             hugo new site . --force
             git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke
             echo 'theme = "ananke"' >> config.toml
+            mkdir -p content/posts
             cat > content/posts/my-first-post.md << EOL
           ---
           title: "My First Post"
