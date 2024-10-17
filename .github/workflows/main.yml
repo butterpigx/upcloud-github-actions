@@ -8,14 +8,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Deploy NodeJS App
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
-          key: ${{ secrets.SSH_KEY }}
           username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
           script: |
-            mkdir test
-            cd test
-            git clone git@github.com:butterpigx/upcloud-github-actions.git 
+            mkdir -p ~/deployment
+            cd ~/deployment
+            git clone https://github.com/butterpigx/upcloud-github-actions.git 
+            cd upcloud-github-actions
+            # Add any additional deployment steps here
             echo 'Deployment Successful to UpCloud'
