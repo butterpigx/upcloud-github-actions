@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Build & Deploy Hugo Site
 
 on:
   push:
@@ -10,17 +10,21 @@ jobs:
     environment: Test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          submodules: true  # Fetch Hugo themes (true OR recursive)
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
-      - name: Debug - Print Secret Availability
-        run: |
-          echo "SSH_HOST is set: ${{ secrets.SSH_HOST != '' }}"
-          echo "SSH_USERNAME is set: ${{ secrets.SSH_USERNAME != '' }}"
-          echo "SSH_KEY is set: ${{ secrets.SSH_KEY != '' }}"
-          echo "First character of SSH_HOST: ${{ secrets.SSH_HOST != '' && secrets.SSH_HOST[0] || 'Not available' }}"
-          echo "Length of SSH_HOST: ${{ secrets.SSH_HOST != '' && secrets.SSH_HOST.length || 'Not available' }}"
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
 
-      - name: Deploy NodeJS App
+      - name: Build Hugo site
+        run: hugo --minify
+
+      - name: Install Nginx on UpCloud
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -28,18 +32,46 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: 22
           script: |
-            echo "Connected to host"
-            hostname
-            pwd
-            mkdir -p ~/deployment
-            cd ~/deployment
-            git clone https://github.com/butterpigx/upcloud-github-actions.git 
-            cd upcloud-github-actions
-            # Add any additional deployment steps here
-            echo 'Deployment Successful to UpCloud'
+            sudo apt update
+            sudo apt install -y nginx
+            sudo systemctl start nginx
+            sudo systemctl enable nginx
+            
+            # Create a new Nginx server block
+            echo "server {
+                listen 80;
+                server_name $(curl -s ifconfig.me);  # Uses the public IP
+                root /var/www/hugo-site;
+                index index.html;
+                location / {
+                    try_files \$uri \$uri/ =404;
+                }
+            }" | sudo tee /etc/nginx/sites-available/hugo-site
+            
+            sudo ln -s /etc/nginx/sites-available/hugo-site /etc/nginx/sites-enabled/
+            sudo nginx -t && sudo systemctl reload nginx
+            
+            sudo mkdir -p /var/www/hugo-site
+            sudo chown -R $USER:$USER /var/www/hugo-site
 
-      - name: Debug - Print Environment Variables
-        if: always()
-        run: |
-          echo "Environment variables (sanitized):"
-          env | grep -v -e PASSWORD -e KEY | sort
+      - name: Deploy to UpCloud
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          source: "public/*"
+          target: "/var/www/hugo-site"
+          strip_components: 1
+
+      - name: Finalize deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            echo "Hugo site deployed successfully"
+            echo "You can now access your site at http://$(curl -s ifconfig.me)"
