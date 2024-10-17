@@ -27,9 +27,13 @@ jobs:
             hugo new site . --force
             git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke
             echo 'theme = "ananke"' >> config.toml
-            hugo new posts/my-first-post.md
-            sed -i '1,/---/!b;//!d' content/posts/my-first-post.md
-            echo "This is my first Hugo post!" >> content/posts/my-first-post.md
+            echo '---
+title: "My First Post"
+date: 2023-01-01
+draft: false
+---
+
+This is my first Hugo post!' > content/posts/my-first-post.md
           fi
 
       - name: Build Hugo site
