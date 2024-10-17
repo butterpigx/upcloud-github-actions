@@ -57,7 +57,7 @@ jobs:
             
             echo "server {
                 listen 80;
-                server_name $(curl -s ifconfig.me);
+                server_name $(curl -s -4 ifconfig.me);
                 root /var/www/hugo-site;
                 index index.html;
                 location / {
@@ -65,7 +65,8 @@ jobs:
                 }
             }" | sudo tee /etc/nginx/sites-available/hugo-site
             
-            sudo ln -s /etc/nginx/sites-available/hugo-site /etc/nginx/sites-enabled/
+            sudo ln -sf /etc/nginx/sites-available/hugo-site /etc/nginx/sites-enabled/
+            sudo rm -f /etc/nginx/sites-enabled/default
             sudo nginx -t && sudo systemctl reload nginx
             
             sudo mkdir -p /var/www/hugo-site
@@ -91,4 +92,4 @@ jobs:
           port: 22
           script: |
             echo "Hugo site deployed successfully"
-            echo "You can now access your site at http://$(curl -s ifconfig.me)"
+            echo "You can now access your site at http://$(curl -s -4 ifconfig.me)"
