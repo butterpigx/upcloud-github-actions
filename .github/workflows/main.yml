@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Build & Deploy Website
 
 on:
   push:
@@ -7,19 +7,23 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: Test
+    environment: Production
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Debug - Print Secret Availability
-        run: |
-          echo "SSH_HOST is set: ${{ secrets.SSH_HOST != '' }}"
-          echo "SSH_USERNAME is set: ${{ secrets.SSH_USERNAME != '' }}"
-          echo "SSH_KEY is set: ${{ secrets.SSH_KEY != '' }}"
-          echo "First character of SSH_HOST: ${{ secrets.SSH_HOST != '' && secrets.SSH_HOST[0] || 'Not available' }}"
-          echo "Length of SSH_HOST: ${{ secrets.SSH_HOST != '' && secrets.SSH_HOST.length || 'Not available' }}"
-      - name: Deploy NodeJS App
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build website
+        run: npm run build
+
+      - name: Deploy to server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -28,13 +32,10 @@ jobs:
           port: 22
           script: |
             echo "Connected to host"
-            hostname
-            pwd
-            mkdir -p ~/deployment
-            cd ~/deployment
-            touch hello-world.txt
-            # Add any additional deployment steps here
-            echo 'Deployment Successful to UpCloud'
+            rm -rf /var/www/html/*
+            scp -r ${{ github.workspace }}/build/* /var/www/html/
+            echo 'Website Deployment Successful'
+
       - name: Debug - Print Environment Variables
         if: always()
         run: |
