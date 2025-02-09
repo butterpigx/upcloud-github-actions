@@ -7,7 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: Example # Change this to match your environment name 
+    environment: Test # Change this to match your environment name!
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
