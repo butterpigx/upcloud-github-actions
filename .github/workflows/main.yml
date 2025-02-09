@@ -8,25 +8,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: Example # Change this to match your environment name 
-    steps: ### This is the continuation of the previous "steps:"!
+    steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Debug - Print Secret Availability
         run: |
-             echo "SSH_HOST is set: ${{ secrets.SSH_HOST != '' }}"
-             echo "SSH_USERNAME is set: ${{ secrets.SSH_USERNAME != '' }}"
-             echo "SSH_KEY is set: ${{ secrets.SSH_KEY != '' }}"
+          echo "SSH_HOST is set: ${{ secrets.SSH_HOST != '' }}"
+          echo "SSH_USERNAME is set: ${{ secrets.SSH_USERNAME != '' }}"
+          echo "SSH_KEY is set: ${{ secrets.SSH_KEY != '' }}"
 
-  - name: Deploy to UpCloud
-    uses: appleboy/ssh-action@master
-    with:
-      host: ${{ secrets.SSH_HOST }}
-      username: ${{ secrets.SSH_USERNAME }}
-      key: ${{ secrets.SSH_KEY }}
-      port: 22
-      script: |
-              echo "Connected to host"
-              touch helloworld.txt
-              echo "hello world!" > helloworld.txt
-              echo "Deployment successful"
+      - name: Deploy to UpCloud
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            echo "Connected to host"
+            touch helloworld.txt
+            echo "hello world!" > helloworld.txt
+            echo "Deployment successful"
